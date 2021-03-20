@@ -19,6 +19,9 @@
     "@angular/platform-browser": "~11.2.4",
     "@angular/platform-browser-dynamic": "~11.2.4",
     "@angular/router": "~11.2.4",
+    "@syncfusion/ej2-angular-buttons": "^18.4.46",
+    "@syncfusion/ej2-angular-heatmap": "^18.4.39",
+    "@syncfusion/ej2-charts": "^18.4.48",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.11.3"
