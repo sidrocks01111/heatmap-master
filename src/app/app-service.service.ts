@@ -13,6 +13,6 @@ export class AppServiceService {
 
   getdata(){
     let url = "http://localhost:3000";
-    return this.http.get<users[]>(url);
+    return this.http.get(url);
   }
 }

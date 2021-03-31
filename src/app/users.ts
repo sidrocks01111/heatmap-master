@@ -2,7 +2,7 @@ export class users{
    
 
     
-    date: Date;
+    date: string;
     Checklists: number;
     
 

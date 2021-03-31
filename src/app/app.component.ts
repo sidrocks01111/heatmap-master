@@ -5,6 +5,8 @@ import { Internationalization } from '@syncfusion/ej2-base';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { AppServiceService } from './app-service.service';
 import { users } from './users';
+import { redrawElement } from '@syncfusion/ej2-angular-charts';
+import { variable } from '@angular/compiler/src/output/output_ast';
 
 
 //Package property inject
@@ -20,7 +22,6 @@ HeatMap.Inject(Tooltip, Legend);
     encapsulation: ViewEncapsulation.None
 
 })
-
 
 
 // Appcomponent class 
@@ -40,6 +41,7 @@ export class AppComponent implements OnInit {
             fontWeight: '500',
             fontStyle: 'Normal',
             fontFamily: 'Segoe UI'
+
         }
     };
 
@@ -50,10 +52,10 @@ export class AppComponent implements OnInit {
 
         valueType: 'DateTime',
         minimum: new Date(2021, 2, 1),
-        maximum: new Date(2021, 2, 21),
+        maximum: new Date(2021, 4, 1),
         intervalType: 'Days',
         showLabelOn: 'Months',
-        labelFormat: 'MMM',
+        labelFormat: 'MMM', // level of months
         increment: 7,
         labelIntersectAction: 'Rotate45',
     };
@@ -61,7 +63,7 @@ export class AppComponent implements OnInit {
     // y-axis config 
 
     yAxis: Object = {
-        labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         isInversed: true,
     };
 
@@ -69,8 +71,11 @@ export class AppComponent implements OnInit {
 
     public cellSettings: Object = {
         showLabel: true,
-        border: {
-            color: 'white'
+        enableCellHighlighting: true, //hover effect
+        border: { //border settings of heatmap
+            width: 1,
+            radius: 1,
+            color: 'green'
         }
     };
 
@@ -82,8 +87,8 @@ export class AppComponent implements OnInit {
         { value: 10, color: 'red', label: '>10 checklists' },
 
         ],
-        type: 'Fixed',
-        emptyPointColor: 'white'
+        type: 'Fixed', //means color are of fixed type not gradient type
+        emptyPointColor: 'white' // color of cell with no value
     };
 
     // legend settings 
@@ -94,13 +99,16 @@ export class AppComponent implements OnInit {
         alignment: 'Near',
         showLabel: true,
         labelDisplayType: 'None',
-        enableSmartLegend: true
+        enableSmartLegend: true //view of legend
+        // title: {
+        //     text: "Variations"
+        // }
     };
 
     // tooltip config 
 
     public tooltipRender(args: ITooltipEventArgs): void {
-        let intl: Internationalization = new Internationalization();
+        let intl: Internationalization = new Internationalization(); // creating object of class internationalization to use its functions
         let format: Function = intl.getDateFormat({ format: 'EEE MMM dd, yyyy' });
         let newDate: Date = <Date>args.xValue;
         let date: Date = new Date(newDate.getTime());
@@ -114,6 +122,7 @@ export class AppComponent implements OnInit {
     // load config 
 
     public load(args: ILoadedEventArgs): void {
+        // alert('HeatMap loaded successfully');
         let selectedTheme: string = location.hash.split('/')[1];
         selectedTheme = selectedTheme ? selectedTheme : 'Material';
         args.heatmap.theme = <HeatMapTheme>(selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1));
@@ -122,48 +131,104 @@ export class AppComponent implements OnInit {
 
     dataSource: Object[]; // creating datasource object
 
-    // constructor 
 
+    // constructor
     constructor(private app: AppServiceService) { } // calling service
 
     // ngoninit function 
-
     ngOnInit(): void {
-        this.app.getdata().subscribe
-            (
-                (response) => { //getting json file as response from localhost:3000
+        this.app.getdata().subscribe((response) => { //getting json file as response from localhost:3000
+
+            //    console.log(response);
 
 
-                    var outputArray = []; //defining array
+            // running a loop to map the date with their checklists and store in hash
 
-                    // running a loop to store json objects in array 
+            var hash = {};
 
-                    for (let element in response) {
-                        outputArray.push({
-                            // extracting checklist data from the json response 
-                            name: response[element].Checklists
-                        });
-                    }
-                    //  injecting the checklists data to the data source of heatmap 
-                    this.dataSource = [
-                        [outputArray[0].name, outputArray[1].name, outputArray[2].name, outputArray[3].name, outputArray[4].name, outputArray[5].name, outputArray[6].name],
-                        [outputArray[7].name, outputArray[8].name, outputArray[9].name, outputArray[10].name, outputArray[11].name, outputArray[12].name, outputArray[13].name],
-                        [outputArray[14].name, outputArray[15].name, 0, outputArray[17].name, outputArray[18].name, 0, 0]
-                    ];
+            for (let element in response) {
 
-                    console.log(outputArray);
+                hash[response[element].Date] = response[element].Checklists;
 
-                },
-                // checking for error 
-                (error) => {
-                    console.log("error occured :" + error);
+            }
+
+            // inserting values to the dataSource of the component 
+
+            // definig variables 
+
+            // date range 
+            var maxDate = new Date(2021, 5, 1);
+            var minDate = new Date(2021, 3, 1);
+
+            // arrays 
+            var arr_main = [];
+            var arr_local = [];
+
+            var new_date: string;
+            var count: number = 0; // count for arr_local
+            var countmain: number = 0; //count for arr_main
+
+            while (minDate < maxDate || count > 0) {
+
+                //   Forming date and storing in string variable 
+                new_date = minDate.getFullYear().toString() + "-";
+
+                if (minDate.getMonth() > 9) {
+                    new_date += minDate.getMonth().toString() + "-";
                 }
-            )
+                else {
+                    new_date += "0" + minDate.getMonth().toString() + "-";
+                }
+
+                if (minDate.getDate() > 9) {
+                    new_date += minDate.getDate().toString();
+                }
+                else {
+                    new_date += "0" + minDate.getDate().toString();
+                }
+
+                // matching the date with the checklists
+
+                // dates with no records give undefined values which will return 0 
+
+                if (hash[new_date] === undefined) arr_local[count] = 0;
+                else arr_local[count] = hash[new_date];
+
+                // inserting values in main array 
+                count++;
+                if (count > 6) {
+                    arr_main[countmain++] = arr_local;
+                    arr_local = [];
+                    count = 0;
+                }
+
+                //    console.log(new_date);
+
+                minDate.setDate(minDate.getDate() + 1);
+
+            }
+
+           
+
+            //  giving values to dataSource 
+
+            this.dataSource = arr_main;
+
+
+        },
+            // checking for error 
+            (error) => {
+                console.log("error occured :" + error);
+            }
+        )
     }
 
 
 
 
 }
+
+
+
 
 
